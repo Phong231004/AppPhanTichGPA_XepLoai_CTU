@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Công cụ học tập - Sinh viên Đại học Cần Thơ</title>
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=K2D:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- XLSX lib -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+  <!-- MathJax config -->
+  <script>
+    window.MathJax = {
+      tex: {inlineMath: [['$', '$'], ['\\(', '\\)']] }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <style>
+    body {
+      background-color: #f9f9f9;
+      font-family: 'K2D', sans-serif;
+    }
+    h2 {
+      text-align: center;
+      color: #0d6efd;
+    }
+    #featureSelect {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    #formContainer, #resultContainer {
+      margin-top: 30px;
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    label, .form-label {
+      font-weight: 600;
+    }
+    .table {
+      margin-top: 20px;
+    }
+    input[type="text"]::-webkit-inner-spin-button, 
+    input[type="text"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .btn-outline-primary {
+      background-color: #ffffff;
+      border-color: #0d6efd;
+      color: #0d6efd;
+      transition: all 0.3s ease;
+    }
+    .btn-outline-primary:hover {
+      background-color: #e6f0ff;
+      box-shadow: 0 0 10px rgba(13, 110, 253, 0.4);
+      color: #084298;
+    }
+    .btn img {
+      filter: drop-shadow(0 0 2px rgba(0,0,0,0.1));
+    }
+    .formula-box {
+      background-color: #e6f0ff;
+      border-radius: 12px;
+      padding: 20px;
+      display: inline-block;
+      box-shadow: 0 0 8px rgba(0,0,0,0.05);
+      transition: transform 0.2s ease;
+    }
+    .formula-box:hover {
+      transform: scale(1.01);
+    }
+    body {
+    background: linear-gradient(to bottom right, #e0f7ff, #f8fcff);
+    }
+
+    #formContainer, #resultContainer {
+    transition: opacity 0.5s ease;
+    }
+    .shine-text {
+    font-family: 'K2D', sans-serif;
+    font-size: 3rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, #0d6efd, #ffffff, #0d6efd);
+    background-size: 200%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    animation: shine 2s infinite linear;
+    text-shadow: 0 0 8px rgba(13, 110, 253, 0.3);
+    }
+
+    @keyframes shine {
+    0% {
+        background-position: 200% center;
+    }
+    100% {
+        background-position: -200% center;
+    }
+    }
+    #formContainer,
+    #resultContainer {
+    display: none;
+    opacity: 0;
+    }
+    #canthoBanner {
+    opacity: 0;
+    transform: translateY(50px);
+    transition: opacity 1s ease, transform 1s ease;
+    }
+
+    #canthoBanner.show {
+    opacity: 1;
+    transform: translateY(0);
+    }
+
+    #typingIndicator {
+    position: fixed;
+    top: 20px;
+    right: 20px; /* Chuyển sang góc phải */
+    font-family: 'K2D', sans-serif;
+    font-weight: 600;
+    font-size: 1.3rem;
+    padding: 6px 12px;
+    border-radius: 8px;
+    z-index: 9999;
+    color: #0d6efd;
+    }
+
+    .cursor {
+    display: inline-block;
+    width: 2px;
+    /* background-color: #0d6efd; */
+    animation: blink 0.7s infinite;
+    margin-left: 2px;
+    height: 1.2em;
+    }
+
+    @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+    }
+  </style>
+</head>
+<body class="p-4">
+    <div id="typingIndicator">Reo Rioll ...<span class="cursor">|</span></div>
+  <!-- Modal hiển thị hướng dẫn -->
+  <div class="modal fade" id="instructionModal" tabindex="-1" aria-labelledby="instructionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content shadow border border-primary rounded-4">
+        <div class="modal-header" style="background: linear-gradient(90deg, #e0f0ff, #f6fbff); font-family: 'K2D', sans-serif;">
+          <h5 class="modal-title text-primary fw-bold" id="instructionModalLabel">
+            HƯỚNG DẪN TÍNH GPA & XÉT XẾP LOẠI XÉT HỌC BỔNG
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+        </div>
+        <div class="modal-body" style="background-color: #f8fbff;">
+
+          <!-- 1. Công thức GPA -->
+          <h5 class="text-success">1. Công thức tính GPA học kỳ:</h5>
+          <div class="text-center mt-4">
+            <div class="formula-box">
+              <p class="mb-2" style="font-size: 1.2rem;">
+                $$ GPA = \frac{\sum_{i=1}^{n} (x_i \times c_i)}{\sum_{i=1}^{n} c_i} $$
+              </p>
+              <small class="text-muted fst-italic d-block mt-1">
+                Với: \( x_i \) là điểm môn thứ \( i \), \( c_i \) là số tín chỉ môn thứ \( i \), \( n \) là tổng số môn học
+              </small>
+            </div>
+          </div>
+
+          <!-- 2. Điều kiện xét học lực -->
+          <h5 class="text-success mt-4">2. Điều kiện xét học bổng & xếp loại học lực:</h5>
+          <div class="table-responsive mt-3">
+            <table class="table table-bordered table-striped table-sm text-center align-middle">
+              <thead class="table-info">
+                <tr>
+                  <th>Xếp loại theo GPA</th>
+                  <th>Xếp loại theo ĐRL (Điểm Rèn Luyện)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>GPA ≥ <strong>3.6</strong> → <span class="text-success fw-semibold">Xuất sắc</span></td>
+                  <td>ĐRL ≥ <strong>90</strong> → <span class="text-success fw-semibold">Xuất sắc</span></td>
+                </tr>
+                <tr>
+                  <td>GPA từ <strong>3.2 – 3.59</strong> → <span class="text-primary fw-semibold">Giỏi</span></td>
+                  <td>ĐRL từ <strong>80 – 89</strong> → <span class="text-primary fw-semibold">Giỏi</span></td>
+                </tr>
+                <tr>
+                  <td>GPA từ <strong>2.5 – 3.19</strong> → <span class="text-warning fw-semibold">Khá</span></td>
+                  <td>ĐRL từ <strong>70 – 79</strong> → <span class="text-warning fw-semibold">Khá</span></td>
+                </tr>
+                <tr>
+                  <td>GPA từ <strong>2.0 – 2.49</strong> → <span class="text-secondary fw-semibold">Trung bình</span></td>
+                  <td>ĐRL từ <strong>60 – 69</strong> → <span class="text-secondary fw-semibold">Trung bình</span></td>
+                </tr>
+                <tr>
+                  <td>GPA dưới <strong>2.0</strong> → <span class="text-danger fw-semibold">Yếu</span></td>
+                  <td>ĐRL từ <strong>50 – 59</strong> → <span class="text-danger fw-semibold">Yếu</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Công thức min -->
+          <div class="text-center mt-4">
+            <div class="formula-box">
+              <p style="font-size: 1.5rem;">$$ \text{Xếp loại cuối} = \min(\text{Xếp loại GPA}, \text{Xếp loại ĐRL}) $$</p>
+              <small class="text-muted fst-italic">Ghi chú: Kết quả xếp loại là mức thấp hơn giữa GPA và điểm rèn luyện</small>
+            </div>
+          </div>
+
+          <!-- 3. Bảng kết hợp -->
+          <h5 class="text-success mt-4">3. Bảng xét học lực kết hợp GPA và điểm rèn luyện:</h5>
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped table-sm">
+              <thead class="table-secondary text-center">
+                <tr>
+                  <th>Loại GPA</th>
+                  <th>Điểm Rèn Luyện</th>
+                  <th>Kết Quả Xếp Loại</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Xuất sắc (≥3.6)</td><td>Xuất sắc (≥90)</td><td><strong>Xuất sắc</strong></td></tr>
+                <tr><td>Xuất sắc (≥3.6)</td><td>Giỏi (80-89)</td><td><strong>Giỏi</strong></td></tr>
+                <tr><td>Giỏi (3.2–3.59)</td><td>Xuất sắc (≥90)</td><td><strong>Giỏi</strong></td></tr>
+                <tr><td>Giỏi (3.2–3.59)</td><td>Giỏi (80-89)</td><td><strong>Giỏi</strong></td></tr>
+                <tr><td>Khá (2.5–3.19)</td><td>Khá (65-79)</td><td><strong>Khá</strong></td></tr>
+                <tr><td>Khá (2.5–3.19)</td><td>Giỏi hoặc Xuất sắc</td><td><strong>Khá</strong></td></tr>
+                <tr><td>Trung bình (2.0–2.49)</td><td>Bất kỳ</td><td><strong>Trung bình</strong></td></tr>
+                <tr><td>Yếu (&lt;2.0)</td><td>Bất kỳ</td><td><strong>Yếu</strong></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h5 class="text-success mt-4">4. Định dạng File danh sách cần xếp loại</h5>
+          <div>
+            <img style="width: 90%;" src="./Demo.png" alt="Demo">
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Giao diện chính -->
+  <div class="container">
+    <div class="text-center mb-2">
+        <button class="btn btn-outline-primary shadow-sm px-4 py-2 rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2"
+                type="button" data-bs-toggle="modal" data-bs-target="#instructionModal">
+          <span>Hiển thị hướng dẫn tính GPA & Xét học lực</span>
+        </button>
+      </div>
+    <h2 class="mb-4 fw-bold" style="text-transform: uppercase;">Công cụ học tập dành cho sinh viên Đại học Cần Thơ</h2>
+    <div class="mb-3 text-center">
+      <label for="featureSelect" class="form-label">Chọn chức năng bạn muốn sử dụng:</label>
+      <select id="featureSelect" class="form-select mx-auto">
+        <option value="">-- Vui lòng chọn chức năng --</option>
+        <option value="gpa">Tính điểm GPA</option>
+        <option value="estimate">Ước lượng GPA tốt nghiệp</option>
+        <option value="rank">Xếp loại thứ hạng học kỳ</option>
+      </select>
+    </div>
+
+    <div id="formContainer"></div>
+
+    <!-- CanTho University Banner -->
+    <div id="canthoBanner" class="text-center my-4">
+      <h1 class="shine-text" style="font-size: 150px;">CanTho University</h1>
+    </div>
+    
+    <div id="resultContainer" class="mt-4"></div>
+    
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="web.js"></script>
+  <script>
+    const banner = document.getElementById("canthoBanner");
+
+    featureSelect.addEventListener("change", function () {
+    if (this.value !== "") {
+        formContainer.style.opacity = 0;
+        resultContainer.style.opacity = 0;
+        formContainer.style.display = "block";
+        resultContainer.style.display = "block";
+        banner.style.display = "none"; // Ẩn banner
+
+        setTimeout(() => {
+        formContainer.style.transition = "opacity 0.5s";
+        resultContainer.style.transition = "opacity 0.5s";
+        formContainer.style.opacity = 1;
+        resultContainer.style.opacity = 1;
+        }, 100);
+    } else {
+        formContainer.style.display = "none";
+        resultContainer.style.display = "none";
+        banner.style.display = "block"; // Hiện lại banner nếu reset
+    }
+    });
+    window.addEventListener("DOMContentLoaded", () => {
+        setTimeout(() => {
+            banner.classList.add("show");
+        }, 300); // Delay nhẹ trước khi xuất hiện
+        });
+
+  </script>
+  <script>
+    const text = "ReoRioll";
+    const typingElement = document.getElementById("typingIndicator");
+    let index = 0;
+  
+    function type() {
+      typingElement.innerHTML = text.slice(0, index) + '<span class="cursor">|</span>';
+      index++;
+      if (index <= text.length) {
+        setTimeout(type, 150);
+      }
+    }
+  
+    window.addEventListener("DOMContentLoaded", type);
+  </script> 
+</body>
+</html>
